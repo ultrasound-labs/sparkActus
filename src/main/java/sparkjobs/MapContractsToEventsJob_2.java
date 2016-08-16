@@ -36,7 +36,8 @@ public class MapContractsToEventsJob_2 {
     String timespecsFile = args[2]; //hdfs://160.85.30.40/user/spark/data/timespecs_input.csv 
     String outputPath = args[3]; //hdfs://160.85.30.40/user/spark/data/output/; 
     //String way = args[3];  //count or Group by
-    String debug = args[4];
+    int nPartitions = (int) Double.parseDouble(args[4]);
+    String debug = args[5];
 
 //    // Create Spark Context (Old Version)
 //    SparkConf conf = new SparkConf().setAppName("sparkjobs.MapContractsToEventsJob");//.setMaster("local");
@@ -89,7 +90,7 @@ public class MapContractsToEventsJob_2 {
     //Broadcast<Map<String,String[]>> riskFactors = riskFactorRDD.collectAsMap();
     
 	// import and map contract data to contract event results
-    JavaRDD<String> contractFile = sparkSession.read().textFile(contractsFile).javaRDD(); // contract data
+    JavaRDD<String> contractFile = sparkSession.read().textFile(contractsFile).javaRDD().repartition(nPartitions); // contract data
     JavaRDD<Row> events = contractFile.map(new ContractToEventsFunction_2(_t0, riskFactorRDD.collectAsMap()));
    // JavaRDD<Row> events = contractFile.map(new ContractToEventsFunction(t0, riskFactors));
     
@@ -117,7 +118,8 @@ public class MapContractsToEventsJob_2 {
     }
     
  // DataFrames can be saved as Parquet files, maintaining the schema information.
- 	chachedEvents.write().parquet(outputPath + "events.parquet");
+ 	chachedEvents.write().parquet(outputPath);
+ 	//chachedEvents.select("id").write().text(outputPath);
  	
 //Data is now ready and it's possible to query the data:
  	 
